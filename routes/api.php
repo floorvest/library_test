@@ -3,6 +3,10 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\Api\BookController;
+use App\Http\Controllers\Api\BookCategoryController;
+use App\Http\Controllers\Api\BorrowSystemController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -14,6 +18,34 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+
+Route::namespace('App\Http\Controllers\Api')
+->middleware(['json.response', 'cors'])
+->group(function() {
+
+    Route::post('auth/login', 'AuthController@login');
+    Route::post('auth/register', 'AuthController@register');
+
+    Route::group(['middleware' => "auth:api"], function() {
+        // book resource
+        Route::resource('book', BookController::class);
+
+        Route::post('book/link', [BookController::class, 'linkCategory']);
+        Route::post('book/link/remove', [BookController::class, 'removeCategory']);
+
+        // book category resource
+        Route::resource('category', BookCategoryController::class);
+
+        // borrow system controller
+        Route::prefix('system')->group( function() {
+            Route::get('books/borrowed', 'BorrowSystemController@borrowedBooks');
+            Route::get('books/returned', 'BorrowSystemController@returnedBooks');
+            Route::get('books/late', 'BorrowSystemController@lateBooks');
+
+            Route::post('books/borrow', 'BorrowSystemController@borrowBooks');
+            Route::post('books/return', 'BorrowSystemController@returnBooks');
+        });
+    });
 });
+
+
